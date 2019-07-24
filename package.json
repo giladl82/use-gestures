@@ -2,7 +2,7 @@
   "name": "use-gestures",
   "version": "1.0.0",
   "description": "React hooks for mobile gestures handling",
-  "main": "dist/index.js",
+  "main": "dist/bundle.js",
   "scripts": {
     "build:prod": "rollup -c --environment BUILD:production",
     "build:dev": "rollup -c --environment BUILD:development --watch",
