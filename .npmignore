@@ -1,0 +1,25 @@
+
+src
+
+#tests
+test
+coverage
+
+#build tools
+.babelrc
+.travis.yml
+.jenkins.yml
+.codeclimate.yml
+rollup.config.js
+
+#linters
+.jscsrc
+.jshintrc
+.eslintrc*
+.eslint
+.eslintignore
+
+#editor settings
+.idea
+.editorconfig
+.prettierrc.yaml

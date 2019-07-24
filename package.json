@@ -1,0 +1,68 @@
+{
+  "name": "use-gestures",
+  "version": "1.0.0",
+  "description": "React hooks for mobile gestures handling",
+  "main": "dist/index.js",
+  "scripts": {
+    "build:prod": "rollup -c --environment BUILD:production",
+    "build:dev": "rollup -c --environment BUILD:development --watch",
+    "test": "jest -o",
+    "test:coverage": "jest --coverage --forceExit --colors",
+    "prepublishOnly": "npm run build:prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/giladl82/use-gestures.git"
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "mobile",
+    "gestures",
+    "pinch",
+    "pan.",
+    "swipe"
+  ],
+  "author": {
+    "name": "Gilad Lev-Ari",
+    "email": "giladl82@gmail.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/giladl82/use-gestures/issues"
+  },
+  "homepage": "https://github.com/giladl82/use-gestures#readme",
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-react": "^7.0.0",
+    "@babel/runtime": "^7.5.5",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^10.0.2",
+    "babel-jest": "^24.8.0",
+    "eslint": "^6.1.0",
+    "eslint-plugin-react": "^7.14.3",
+    "eslint-plugin-react-hooks": "^1.6.1",
+    "husky": "^3.0.1",
+    "jest": "^24.8.0",
+    "react": "^16.8.6",
+    "react-hooks-testing-library": "^0.6.0",
+    "rollup": "^1.17.0",
+    "rollup-plugin-babel": "^4.3.3",
+    "rollup-plugin-babel-minify": "^9.0.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-eslint": "^7.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-peer-deps-external": "^2.2.0"
+  },
+  "peerDependencies": {
+    "react": "^16.8.6"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test",
+      "pre-push": "npm run test:coverage"
+    }
+  }
+}

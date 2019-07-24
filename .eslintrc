@@ -1,0 +1,26 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+		"browser": true,
+    "node": true,
+    "es6": true
+  },
+  "settings":{
+    "react": {
+      "version": "detect"
+    }
+  },
+  "plugins": [
+    "react",
+    "react-hooks"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended"
+  ],
+   "rules": {
+    "no-console": 0,
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
+  }
+}
