@@ -52,12 +52,12 @@ const getAngleDeg = (p1, p2) => {
     onSwipeUp: function,
     onSwipeDown: function,
     onPanEnd: function,
-    onSwipeLeftEnd:function,
+    onSwipeLeftEnd: function,
     onSwipeRightEnd: function,
     onSwipeUpEnd: function,
     onSwipeDownEnd: function,
     onPinchStart: function,
-    onPinchChanged:function,
+    onPinchChanged: function,
     onPinchEnd: function,
     }} handlers 
  * @param {{
