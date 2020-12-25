@@ -71,7 +71,7 @@ Are two fingers pan events.
 
 ### Usage and Demos
 
-Here is a full [demo site](https://giladl82.github.io/use-gestures-app/_) with code examples. It is best to watch in on a mobile device
+Here is a full [demo site](https://giladl82.github.io/use-gestures-app/) with code examples. It is best to watch in on a mobile device
 
 Here is a quick code example
 

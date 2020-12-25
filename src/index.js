@@ -1,4 +1,19 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+
+let passiveOptionAccessed = false;
+const options = {
+  get passive() {
+    return (passiveOptionAccessed = true);
+  },
+};
+
+const noop = () => {};
+window.addEventListener && window.addEventListener('p', noop, options);
+window.removeEventListener && window.removeEventListener('p', noop, false);
+
+const supportsPassiveEvents = passiveOptionAccessed;
+
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
 
 class Pointer {
   /**
@@ -13,7 +28,7 @@ class Pointer {
 
 const debounce = (func, wait) => {
   let timeout;
-  return function(...args) {
+  return function (...args) {
     const context = this;
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(context, args), wait);
@@ -68,59 +83,61 @@ export default function useGestures(
   ref,
   handlers,
   options = {
-    minDelta: 30
+    minDelta: 30,
   }
 ) {
-  const [touches, setTouches] = useState(null);
-  const [gesture, setGesture] = useState('');
+  const touchesRef = useRef();
+  const gestureRef = useRef('');
 
   const initialTouches = useRef(null);
 
-  useEffect(() => {
-    const element = ref.current;
+  const getCurrentTouches = (originalEvent, touches, prevTouch) => {
+    const firstTouch = initialTouches.current;
 
-    const getCurrentTouches = (originalEvent, touches, prevTouch) => {
-      const firstTouch = initialTouches.current;
+    if (touches.length === 2) {
+      const pointer1 = new Pointer(touches[0]);
+      const pointer2 = new Pointer(touches[1]);
 
-      if (touches.length === 2) {
-        const pointer1 = new Pointer(touches[0]);
-        const pointer2 = new Pointer(touches[1]);
+      const distance = getDistance(pointer1, pointer2);
+      return {
+        preventDefault: originalEvent.preventDefault,
+        stopPropagation: originalEvent.stopPropagation,
+        pointers: [pointer1, pointer2],
+        delta: prevTouch ? distance - prevTouch.distance : 0,
+        scale: firstTouch ? distance / firstTouch.distance : 1,
+        distance,
+        angleDeg: getAngleDeg(pointer1, pointer2),
+      };
+    } else {
+      const pointer = new Pointer(touches[0]);
 
-        const distance = getDistance(pointer1, pointer2);
-        return {
-          preventDefault: originalEvent.preventDefault,
-          stopPropagation: originalEvent.stopPropagation,
-          pointers: [pointer1, pointer2],
-          delta: prevTouch ? distance - prevTouch.distance : 0,
-          scale: firstTouch ? distance / firstTouch.distance : 1,
-          distance,
-          angleDeg: getAngleDeg(pointer1, pointer2)
-        };
-      } else {
-        const pointer = new Pointer(touches[0]);
+      return {
+        preventDefault: originalEvent.preventDefault,
+        stopPropagation: originalEvent.stopPropagation,
+        ...pointer,
+        deltaX: prevTouch ? pointer.x - prevTouch.x : 0,
+        deltaY: prevTouch ? pointer.y - prevTouch.y : 0,
+        delta: prevTouch ? getDistance(pointer, prevTouch) : 0,
+        distance: firstTouch ? getDistance(pointer, firstTouch) : 0,
+        angleDeg: prevTouch ? getAngleDeg(pointer, prevTouch) : 0,
+      };
+    }
+  };
 
-        return {
-          preventDefault: originalEvent.preventDefault,
-          stopPropagation: originalEvent.stopPropagation,
-          ...pointer,
-          deltaX: prevTouch ? pointer.x - prevTouch.x : 0,
-          deltaY: prevTouch ? pointer.y - prevTouch.y : 0,
-          delta: prevTouch ? getDistance(pointer, prevTouch) : 0,
-          distance: firstTouch ? getDistance(pointer, firstTouch) : 0,
-          angleDeg: prevTouch ? getAngleDeg(pointer, prevTouch) : 0
-        };
-      }
-    };
-
-    const callHandler = (eventName, event) => {
+  const callHandler = useCallback(
+    (eventName, event) => {
       if (eventName && handlers[eventName] && typeof handlers[eventName] === 'function') {
         handlers[eventName](event);
       }
-    };
+    },
+    [handlers]
+  );
 
-    const handleTouchStart = event => {
+  const handleTouchStart = useCallback(
+    (event) => {
       const currentTouches = getCurrentTouches(event, event.touches, null);
-      setTouches(currentTouches);
+
+      touchesRef.current = currentTouches;
       initialTouches.current = currentTouches;
 
       if (event.touches.length === 2) {
@@ -128,11 +145,15 @@ export default function useGestures(
       } else {
         callHandler('onPanStart', currentTouches);
       }
-    };
+    },
+    [callHandler]
+  );
 
-    const handleTouchMove = event => {
-      const currentTouches = getCurrentTouches(event, event.touches, touches);
-      setTouches(currentTouches);
+  const handleTouchMove = useCallback(
+    (event) => {
+      const currentTouches = getCurrentTouches(event, event.touches, touchesRef.current);
+
+      touchesRef.current = currentTouches;
 
       if (event.touches.length === 2) {
         callHandler('onPinchChanged', currentTouches);
@@ -167,35 +188,68 @@ export default function useGestures(
         if (eventName) {
           debounce((eventName, touches, theGesture) => {
             callHandler(eventName, touches);
-            setGesture(theGesture);
-          }, 100)(eventName, touches, theGesture);
 
+            gestureRef.current = theGesture;
+          }, 100)(eventName, touchesRef.current, theGesture);
         }
       }
-    };
+    },
+    [callHandler, options.minDelta]
+  );
 
-    const handleTouchEnd = event => {
+  const handleTouchEnd = useCallback(
+    (event) => {
       const currentTouches = getCurrentTouches(event, event.changedTouches, null);
-      if (touches && touches.pointers) {
-        if (touches.pointers.length === 2) {
+      if (touchesRef.current && touchesRef.current.pointers) {
+        if (touchesRef.current.pointers.length === 2) {
           callHandler('onPinchEnd', currentTouches);
         } else {
           callHandler('onPanEnd', currentTouches);
         }
       }
 
-      if (gesture) {
-        callHandler(`on${gesture.charAt(0).toUpperCase() + gesture.slice(1)}End`, currentTouches);
+      if (gestureRef.current) {
+        debounce((eventName, touches) => {
+          callHandler(eventName, touches);
+        }, 100)(`on${gestureRef.current.charAt(0).toUpperCase() + gestureRef.current.slice(1)}End`, currentTouches);
+        
       }
-    };
+    },
+    [callHandler]
+  );
 
-    element.addEventListener('touchstart', handleTouchStart);
-    element.addEventListener('touchmove', handleTouchMove);
-    element.addEventListener('touchend', handleTouchEnd);
+  useEffect(() => {
+    const element = ref && ref.current ? ref.current : ref;
+
+    if (!isTouchDevice) return;
+
+    if (!element || !element.addEventListener || !typeof element.addEventListener === 'function') {
+      if (process && process.env && process.env.NODE_ENV === 'development') {
+        console.warn(`useGestures - Missing a reference to a 'ref object' or the a instance of HTMLElement`);
+      }
+      return;
+    }
+
+    element.addEventListener(
+      'touchstart',
+      handleTouchStart,
+      supportsPassiveEvents ? { capture: false, passive: true } : false
+    );
+    element.addEventListener(
+      'touchmove',
+      handleTouchMove,
+      supportsPassiveEvents ? { capture: false, passive: true } : false
+    );
+    element.addEventListener(
+      'touchend',
+      handleTouchEnd,
+      supportsPassiveEvents ? { capture: false, passive: true } : false
+    );
+
     return () => {
       element.removeEventListener('touchstart', handleTouchStart);
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
     };
-  });
+  }, [handleTouchEnd, handleTouchMove, handleTouchStart, handlers, options, ref]);
 }
